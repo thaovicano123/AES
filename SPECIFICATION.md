@@ -7,7 +7,7 @@
 | **Tên dự án** | AES-256 Encryption/Decryption System |
 | **Phiên bản** | 1.0 |
 | **Ngày** | 2025-10-13 |
-| **Tác giả** | [Tên của bạn] |
+| **Tác giả** | [Nguyễn Đức Thạo] |
 | **Mục đích** | Implementation AES-256 cho FPGA |
 | **Chuẩn tham chiếu** | FIPS-197 (Advanced Encryption Standard) |
 
