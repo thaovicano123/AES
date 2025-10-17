@@ -321,7 +321,7 @@ key_i[255:0] ─┤                      │──→ ciphertext_o[127:0]
 
 Biểu đồ dưới đây mô tả hoạt động thời gian của toàn bộ hệ thống AES-256 với **9 ports** (6 inputs + 3 outputs) cho cả hai chế độ **Encryption** và **Decryption**:
 
-![AES-256 Overall System Timing Diagram](https://github.com/thaovicano123/AES/blob/main/aes256_overall_system_timing.png?raw=true)
+![AES-256 Overall System Timing Diagram](https://github.com/thaovicano123/AES/blob/main/aes256_overall_system_timing.jpg?raw=true)
 
 *Hình: Timing diagram hoàn chỉnh hiển thị tất cả 9 ports trong một biểu đồ liên tục*
 
