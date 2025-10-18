@@ -211,9 +211,9 @@ Round | Rcon[i] (hex) | Rcon[i] (binary)
 ---
 
 
-## 🏗️ Sơ đồ khối AES-256 Encryption Core
+## 🏗️ Sơ đồ khối AES-256 Core
 
-### Block Diagram - AES-256 Encryption Core
+### Block Diagram - AES-256 Core
 
 ```
                 plaintext_i[127:0] ← Plaintext input (128 bits)
@@ -222,9 +222,9 @@ Round | Rcon[i] (hex) | Rcon[i] (binary)
               ┌──────────────────────┐
               │                      │
 key_i[255:0] ─┤                      │──→ ciphertext_o[127:0]
-              │     AES-256          │
-   start_i ───┤     Encryption       │──→ valid_o
-              │        Core          │
+              │                      │
+   start_i ───┤                      │──→ valid_o
+              │     AES-256 Core     │
    mode_i ────┤                      │──→ busy_o
               │                      │
       clk ────┤                      │
@@ -433,5 +433,6 @@ Start to Output Ready: 18 clock cycles
 4. **Vùng highlights**:
    - 🟡 **Vàng nhạt**: Processing region (Encryption)
    - 🔵 **Xanh nhạt**: Processing region (Decryption)
+
 
 
