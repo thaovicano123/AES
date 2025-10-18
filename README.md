@@ -9,7 +9,6 @@
 
 - **RAM**: 10kB
 
-•	Clock frequency : 100MHz##
 
 ### 🔒 Chức năng Mã hóa (Encryption)
 
@@ -434,3 +433,4 @@ Start to Output Ready: 18 clock cycles
 4. **Vùng highlights**:
    - 🟡 **Vàng nhạt**: Processing region (Encryption)
    - 🔵 **Xanh nhạt**: Processing region (Decryption)
+
