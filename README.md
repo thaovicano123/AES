@@ -12,7 +12,7 @@
 
 ### 🔒 Chức năng Mã hóa (Encryption)
 
-- **Input**: plaintext 128 bit + key 256 bit•	Power : < 500mW
+- **Input**: plaintext 128 bit + key 256 bit
 
 - **Output**: ciphertext 128 bit
 
@@ -433,4 +433,5 @@ Start to Output Ready: 18 clock cycles
 4. **Vùng highlights**:
    - 🟡 **Vàng nhạt**: Processing region (Encryption)
    - 🔵 **Xanh nhạt**: Processing region (Decryption)
+
 
