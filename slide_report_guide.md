@@ -651,7 +651,7 @@ Bus Interfaces:
 │  │ └──────────────────────────────────────────────────┘ │  │
 │  │ ┌──────────────────────────────────────────────────┐ │  │
 │  │ │ Instantiated: aes256_key_expansion_comb.v        │ │  │
-│  │ │ • Generates 15 round keys (1920 bits)            │ │  │
+│  │ │ • Generates 15 round keys (1920 bi ts)            │ │  │
 │  │ │ • Fully combinational (0 cycles latency)         │ │  │
 │  │ │ • Uses 6,985 LUTs (55% of AES resources)         │ │  │
 │  │ └──────────────────────────────────────────────────┘ │  │
@@ -851,19 +851,124 @@ Total Cycles: 16 cycles
 
 ---
 
-### **🎤 LỜI NÓI THUYẾT TRÌNH SLIDE 7: AES-256 RTL DESIGN**
+### **🎤 LỜI NÓI THUYẾT TRÌNH SLIDE 6: GIỚI THIỆU SƠ ĐỒ KIẾN TRÚC**
 
-**[Phiên bản ngắn gọn - 1-2 phút]**
+**[Giới thiệu ngắn gọn theo sơ đồ - 1 phút]**
 
-"Chúng em tiếp tục với thiết kế phần cứng AES-256. Đây là trái tim của hệ thống, được viết hoàn toàn bằng Verilog HDL với tổng cộng 1,812 dòng RTL code.
+"Chúng em xin giới thiệu kiến trúc phần cứng AES-256 gồm 2 module chính:
 
-Kiến trúc gồm 3 module chính: Đầu tiên là AHB Wrapper với 176 dòng code, đóng vai trò giao tiếp với CPU thông qua memory-mapped registers tại địa chỉ 0x80000000. 
+**Module 1 - AHB Wrapper (176 dòng code):**
+Đây là interface layer giao tiếp với CPU qua memory-mapped registers tại địa chỉ 0x80000000. CPU ghi key và data vào đây, sau đó wrapper chuyển xuống AES Core.
 
-Module thứ hai là AES Core với 1,423 dòng code - đây là phần lớn nhất. Chúng em thiết kế một State Machine 5 trạng thái để điều khiển 14 rounds mã hóa của AES-256. Các phép biến đổi SubBytes, ShiftRows, MixColumns và AddRoundKey đều được inline trực tiếp vào core để tối ưu hóa timing.
+**Module 2 - AES Core (1,423 dòng code):**
+Đây là crypto engine chính. Bên trong gồm có:
+- FSM Controller với 5 states điều khiển 14 rounds mã hóa
+- Module Key Expansion được instantiate ngay trong Core này - thiết kế combinational để sinh 15 round keys với 0-cycle latency
+- Datapath với các phép biến đổi SubBytes, ShiftRows, MixColumns, AddRoundKey được inline để tối ưu timing
 
-Module thứ ba là Key Expansion hoàn toàn tổ hợp với 213 dòng code. Đây là một điểm đặc biệt: thay vì tính tuần tự, chúng em thiết kế logic tổ hợp để sinh 15 round keys đồng thời trong 0 chu kỳ clock. Đổi lại, nó tiêu tốn 6,985 LUTs - chiếm 50% tài nguyên của toàn bộ AES core.
+Key Expansion chiếm 6,985 LUTs - hơn 50% tài nguyên AES, nhưng đổi lại cho latency bằng 0.
 
-Kết quả cuối cùng: Mỗi block 128-bit được mã hóa trong khoảng 20 chu kỳ clock, tương đương 1.33 micro-giây tại tần số 15 MHz, đạt throughput 96 Mbps - nhanh hơn software 250 lần."
+Data flow rất đơn giản: CPU ghi key và data vào Wrapper → Wrapper truyền xuống Core → Core gọi Key Expansion sinh round keys → FSM xử lý 16 cycles → kết quả trả về CPU.
+
+*[Slide tiếp theo chúng em sẽ đi sâu vào FSM và các transformations]*"
+
+---
+
+### **🎤 LỜI NÓI CHO KHỐI AHB WRAPPER**
+
+**[Phiên bản ngắn gọn - 30-40 giây]**
+
+"Module AHB Wrapper với 176 dòng code đóng vai trò cầu nối giữa CPU và AES Core. Nó implement giao thức AHB-Lite slave với các thanh ghi được map tại địa chỉ 0x80000000.
+
+Các thanh ghi chính gồm: CTRL để start và chọn mode encrypt hoặc decrypt, STATUS để kiểm tra done và busy flags, 8 thanh ghi KEY để lưu key 256-bit, 4 thanh ghi DATA_IN cho plaintext 128-bit, và 4 thanh ghi DATA_OUT cho kết quả ciphertext.
+
+CPU chỉ cần ghi key và data vào các thanh ghi này, set bit start, sau đó poll STATUS register để biết khi nào xong."
+
+---
+
+**[Phiên bản chi tiết - 1-2 phút]**
+
+"Bây giờ em xin giải thích chi tiết về module AHB Wrapper - tầng giao tiếp đầu tiên.
+
+**AHB-Lite Slave Interface:**
+Module này implement giao thức AHB-Lite theo chuẩn ARM AMBA. Nó hoạt động như một slave peripheral, cho phép PicoRV32 CPU truy cập AES accelerator như một memory-mapped device tại base address 0x80000000.
+
+**Register Map:**
+Chúng em thiết kế 5 nhóm thanh ghi:
+
+Thứ nhất, CTRL register tại offset 0x00: Bit 0 là start signal để kick-off quá trình mã hóa, bit 1 chọn mode - 0 là encrypt, 1 là decrypt.
+
+Thứ hai, STATUS register tại offset 0x04: Bit 0 là done flag báo hiệu hoàn thành, bit 1 là busy flag cho biết AES đang xử lý.
+
+Thứ ba, KEY registers từ offset 0x10 đến 0x2C: Đây là 8 thanh ghi 32-bit, tổng cộng 256-bit để lưu master key. CPU ghi tuần tự KEY[0] đến KEY[7].
+
+Thứ tư, DATA_IN registers từ offset 0x30 đến 0x3C: 4 thanh ghi 32-bit chứa plaintext block 128-bit cần mã hóa.
+
+Thứ năm, DATA_OUT registers từ offset 0x40 đến 0x4C: 4 thanh ghi 32-bit chứa kết quả ciphertext sau khi mã hóa xong.
+
+**Protocol Flow:**
+Quy trình làm việc rất đơn giản: CPU ghi key vào KEY registers, ghi plaintext vào DATA_IN, sau đó set bit 0 của CTRL register. Wrapper sẽ chuyển key và data xuống AES Core kèm theo start signal. Trong khi AES xử lý, busy flag được set. Khi xong, done flag lên 1, CPU poll STATUS, rồi đọc kết quả từ DATA_OUT.
+
+Wrapper này tiêu tốn khoảng 500 LUTs và 300 registers - rất nhỏ so với toàn bộ thiết kế."
+
+---
+
+**[Phiên bản đối thoại tự nhiên - 1 phút]**
+
+"Em xin giải thích về module AHB Wrapper - cái cửa để CPU giao tiếp với AES.
+
+Thực ra nó giống như một bưu điện vậy ạ. CPU muốn mã hóa thì phải gửi key và data vào đây, rồi bấm nút start. Wrapper sẽ chuyển xuống AES Core xử lý.
+
+Chúng em thiết kế các "ngăn" để CPU gửi nhận dữ liệu:
+- Ngăn CTRL: Chứa nút start và chọn mã hóa hay giải mã
+- Ngăn STATUS: Báo đã xong chưa, đang bận không
+- Ngăn KEY: Chứa key 256-bit - chia thành 8 ngăn nhỏ 32-bit
+- Ngăn DATA_IN: Chứa data cần mã hóa - 4 ngăn 32-bit
+- Ngăn DATA_OUT: Chứa kết quả sau khi mã hóa - 4 ngăn 32-bit
+
+Tất cả các ngăn này được đặt tại địa chỉ 0x80000000. CPU chỉ cần write/read như truy cập RAM bình thường, wrapper lo chuyển đổi thành tín hiệu cho AES Core.
+
+Thiết kế này theo chuẩn ARM AHB-Lite, rất phổ biến trong SoC design. Ưu điểm là đơn giản, dễ integrate, và CPU không cần biết bên trong AES hoạt động thế nào."
+
+---
+
+### **📊 BLOCK DIAGRAM: KEY EXPANSION MODULE**
+
+```
+    key_i[255:0]
+         │
+         ▼
+┌─────────────────────┐
+│  Initialization     │
+│  (8 words)          │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│  Helper Functions   │
+│  S-BOX, RotWord,    │
+│  SubWord, RCON      │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│  Word Generation    │
+│  (w[8] to w[59])    │
+│  52 words           │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│  Round Key Packing  │
+│  (15 × 128-bit)     │
+└──────────┬──────────┘
+           │
+           ▼
+   round_keys_o[1919:0]
+
+• Fully combinational (0 cycles)
+• 6,985 LUTs (55% of AES)
+```
 
 ---
 
