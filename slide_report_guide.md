@@ -972,6 +972,80 @@ Thiết kế này theo chuẩn ARM AHB-Lite, rất phổ biến trong SoC design
 
 ---
 
+### **📊 BLOCK DIAGRAM: ENCRYPTION & DECRYPTION**
+
+```
+ENCRYPTION (16 cycles)          DECRYPTION (16 cycles)
+━━━━━━━━━━━━━━━━━━━━━━━━━━      ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Plaintext + Key[255:0]          Ciphertext + Key[255:0]
+        │                                │
+        ▼                                ▼
+  ┌──────────┐                     ┌──────────┐
+  │ S_IDLE   │                     │ S_IDLE   │
+  └────┬─────┘                     └────┬─────┘
+       │                                │
+       ▼                                ▼
+  ┌──────────┐                     ┌──────────┐
+  │S_KEY_ADD │ RK[0]               │S_KEY_ADD │ RK[14]
+  └────┬─────┘                     └────┬─────┘
+       │                                │
+       ▼                                ▼
+  ┌──────────┐                     ┌──────────┐
+  │ S_ROUND  │ SubBytes            │ S_ROUND  │ InvShiftRows
+  │  (×13)   │ ShiftRows           │  (×13)   │ InvSubBytes
+  │          │ MixColumns          │          │ AddRoundKey
+  │          │ AddRoundKey         │          │ InvMixColumns
+  └────┬─────┘                     └────┬─────┘
+       │                                │
+       ▼                                ▼
+  ┌──────────┐                     ┌──────────┐
+  │ S_FINAL  │ SubBytes            │ S_FINAL  │ InvShiftRows
+  │          │ ShiftRows           │          │ InvSubBytes
+  │          │ AddRoundKey         │          │ AddRoundKey
+  └────┬─────┘                     └────┬─────┘
+       │                                │
+       ▼                                ▼
+  ┌──────────┐                     ┌──────────┐
+  │ S_DONE   │                     │ S_DONE   │
+  └──────────┘                     └──────────┘
+       │                                │
+       ▼                                ▼
+  Ciphertext                        Plaintext
+```
+
+---
+
+### **🔄 SO SÁNH MÃ HÓA VS GIẢI MÃ**
+
+```
+┌─────────────────┬──────────────────────┬──────────────────────┐
+│ State           │ Encryption           │ Decryption           │
+├─────────────────┼──────────────────────┼──────────────────────┤
+│ S_KEY_ADD       │ state ⊕ RK[0]        │ state ⊕ RK[14]       │
+│ (Initial)       │                      │ (Reverse key order)  │
+├─────────────────┼──────────────────────┼──────────────────────┤
+│ S_ROUND         │ SubBytes             │ InvShiftRows         │
+│ (13 rounds)     │ ShiftRows            │ InvSubBytes          │
+│                 │ MixColumns           │ AddRoundKey          │
+│                 │ AddRoundKey          │ InvMixColumns        │
+├─────────────────┼──────────────────────┼──────────────────────┤
+│ S_FINAL         │ SubBytes             │ InvShiftRows         │
+│ (Round 14)      │ ShiftRows            │ InvSubBytes          │
+│                 │ AddRoundKey          │ AddRoundKey          │
+│                 │ (No MixColumns)      │ (No InvMixColumns)   │
+├─────────────────┼──────────────────────┼──────────────────────┤
+│ Total Cycles    │ 16 cycles            │ 16 cycles            │
+└─────────────────┴──────────────────────┴──────────────────────┘
+
+Key Differences:
+• Encryption: RK[0]→RK[14]  |  Decryption: RK[14]→RK[0]
+• Encryption: Sub→Shift→Mix→AddKey  |  Decryption: InvShift→InvSub→AddKey→InvMix
+• Same FSM structure, different transformations
+```
+
+---
+
 **[Phiên bản chi tiết khoa học - 3-4 phút]**
 
 "Chúng em chuyển sang phần thiết kế phần cứng AES-256 accelerator - đây là contribution chính của đề tài.
