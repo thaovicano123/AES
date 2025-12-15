@@ -651,16 +651,22 @@ Bus Interfaces:
 │  │ └──────────────────────────────────────────────────┘ │  │
 │  │ ┌──────────────────────────────────────────────────┐ │  │
 │  │ │ Instantiated: aes256_key_expansion_comb.v        │ │  │
-│  │ │ • Generates 15 round keys (1920 bi ts)            │ │  │
+│  │ │ • Generates 15 round keys (1920 bits)            │ │  │
 │  │ │ • Fully combinational (0 cycles latency)         │ │  │
-│  │ │ • Uses 6,985 LUTs (55% of AES resources)         │ │  │
+│  │ │ • Consumes significant resources (optimized)     │ │  │
 │  │ └──────────────────────────────────────────────────┘ │  │
 │  │ ┌──────────────────────────────────────────────────┐ │  │
 │  │ │ Datapath (Inline Transformations)                │ │  │
-│  │ │  • SubBytes:    S-box function (256-entry LUT)   │ │  │
-│  │ │  • ShiftRows:   Row rotation logic               │ │  │
-│  │ │  • MixColumns:  GF(2^8) matrix multiply          │ │  │
-│  │ │  • AddRoundKey: XOR with round key               │ │  │
+│  │ │  Encryption:                                     │ │  │
+│  │ │   • SubBytes:    S-box (256-entry LUT)           │ │  │
+│  │ │   • ShiftRows:   Row rotation logic              │ │  │
+│  │ │   • MixColumns:  GF(2^8) matrix (×2, ×3)         │ │  │
+│  │ │  Decryption:                                     │ │  │
+│  │ │   • InvSubBytes: Inverse S-box                   │ │  │
+│  │ │   • InvShiftRows: Inverse rotation               │ │  │
+│  │ │   • InvMixColumns: GF(2^8) (×9,×11,×13,×14)      │ │  │
+│  │ │  Both modes:                                     │ │  │
+│  │ │   • AddRoundKey: XOR with round key              │ │  │
 │  │ └──────────────────────────────────────────────────┘ │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                                                             │
